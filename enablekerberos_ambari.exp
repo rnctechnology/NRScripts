@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+                          ;# script wasn't run conservatively originally
+if {$force_conservative} {
+        set send_slow {1 .1}
+        proc send {ignore arg} {
+                sleep .1
+                exp_send -s -- $arg
+        }
+}
+
+set timeout -1
+spawn ambari-server setup-security
+match_max 100000
+
+expect -exact "Using python  /usr/bin/python2.6\r
+Security setup options...\r
+===========================================================================\r
+Choose one of the following options: \r
+  \[1\] Enable HTTPS for Ambari server.\r
+  \[2\] Encrypt passwords stored in ambari.properties file.\r
+  \[3\] Setup Ambari kerberos JAAS configuration.\r
+  \[4\] Setup truststore.\r
+  \[5\] Import certificate to truststore.\r
+===========================================================================\r
+Enter choice, (1-5): "
+send -- "3\r"
+expect -exact "3\r
+Setting up Ambari kerberos JAAS configuration to access secured Hadoop daemons...\r
+Enter ambari server's kerberos principal name (ambari@EXAMPLE.COM): "
+send -- "ambari-server@NRCTech.COM"
+expect -exact "ambari-server@RNCTech.COM"
+send -- "\r"
+expect -exact "\r
+Enter keytab path for ambari server's kerberos principal: "
+send -- "/etc/security/keytabs/ambari.server.keytab\r"
+expect eof
